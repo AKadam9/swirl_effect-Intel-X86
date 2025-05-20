@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "allegro_image.h": "c",
+        "allegro.h": "c",
+        "display.h": "c",
+        "bitmap.h": "c",
+        "bitmap_lock.h": "c",
+        "stdlib.h": "c",
+        "base.h": "c",
+        "stdio.h": "c",
+        "color.h": "c",
+        "alconfig.h": "c",
+        "alplatf.h": "c"
+    }
+}
