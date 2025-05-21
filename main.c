@@ -53,6 +53,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    // copy input to output
+    al_set_target_bitmap(output);
+    al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ZERO);  // Overwrite
+    al_draw_bitmap(input, 0, 0, 0);
+
     // Lock bitmaps for pixel access
     ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READONLY);
     ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READWRITE);
@@ -65,13 +70,17 @@ int main(int argc, char *argv[])
 
     printf("Pitch: %d, width: %d, height: %d\n", src_lock->pitch, width, height);
 
+    int pitch = src_lock->pitch;
+    if (pitch < 0)
+        pitch = -pitch;
+
 
     // Call assembly swirl function
     swirl_effect(
         (unsigned char*)input,
         (unsigned char*)output,
         width, height,
-        src_lock->pitch // bytes per row
+        pitch // bytes per row
     );
 
     // Unlock bitmaps
