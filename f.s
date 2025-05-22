@@ -5,7 +5,7 @@ swirl_effect:
     push rbp  ; stos chyba pełny na pewno schodzący
     mov rbp, rsp
 
-    sub rsp, 120
+    sub rsp, 160
     ; K [rbp-8]
 
     ; src [rbp-16]
@@ -50,7 +50,7 @@ swirl_effect:
     ; r8 = bytes per row
 
 begin:
-    mov qword [rbp-8], 20  ; load k
+    mov qword [rbp-8], 1  ; load k
     mov qword [rbp-16], rdi  ; save src
     mov qword [rbp-24], rsi  ; save dst
     mov qword [rbp-32], r10  ; save width
@@ -63,15 +63,16 @@ get_total_bytes:
     mov r14, r8  ; bytes per row
     mov r15, [rbp-40]  ; height
     mov rax, r14
-    imul r15
+    mul r15
     mov [rbp-56], rax  ; total_bytes_number
 
 get_pixel_number:
     mov r14, [rbp-32]  ; width
     mov r15, [rbp-40]  ; height
     mov rax, r14
-    imul r15
+    mul r15
     mov rbx, rax  ; general counter
+
     sub rbx, 1  ; inaczej nie działa
 
 calculate_center:
@@ -93,6 +94,9 @@ row:
 lop:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to_polar:
+    mov r14, [rbp-64]
+    mov r15, [rbp-72]
+
 x_coordinates:
     mov qword [rbp-80], r9  ; x_offset
     sub qword [rbp-80], r14  ; row_counter-center_x  x_offset
@@ -103,23 +107,27 @@ x_coordinates:
 get_radius:
     fild qword [rbp-80]     ; ST(0) = x (int -> float)  x_offset
     fild qword [rbp-80]     ; ST(0) = x, ST(1) = x  x_offset
-    fmul                      ; ST(0) = x²
+    fmul                    ; ST(0) = x²
 
     fild qword [rbp-88]     ; ST(0) = y, ST(1) = x²  y_offset
     fild qword [rbp-88]     ; ST(0) = y, ST(1) = y, ST(2) = x²  y_offset
-    fmul                      ; ST(0) = y², ST(1) = x²
+    fmul                    ; ST(0) = y², ST(1) = x²
 
-    fadd                      ; ST(0) = x² + y²
-    fsqrt                     ; ST(0) = √(x² + y²) = r
+    fadd                    ; ST(0) = x² + y²
+    fsqrt                   ; ST(0) = √(x² + y²) = r
 
     fstp qword [rbp-96]  ; radius
+
+    finit                   ; clear the FPU stack
 
 get_angle:
     fild qword [rbp-88]     ; ST(0) = y  y_offset
     fild qword [rbp-80]     ; ST(0) = x, ST(1) = y  x_offset
-    fpatan                    ; ST(0) = atan2(y, x)
+    fpatan                  ; ST(0) = atan2(y, x)
 
     fstp qword [rbp-104]  ; angle
+
+    finit                    ; clear the FPU stack
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 new_coordinates:
@@ -135,6 +143,8 @@ new_angle:
 
     fstp qword [rbp-104]  ; angle
 
+    finit                    ; clear the FPU stack
+
 new_x:
     fld qword [rbp-96]        ; ST(0) = r  radius
     fld qword [rbp-104]     ; ST(0) = θ', ST(1) = r  angle
@@ -142,6 +152,8 @@ new_x:
     fmul                      ; ST(0) = x = r * cos(θ')
 
     fstp qword [rbp-112]        ; store new_x
+
+    finit                    ; clear the FPU stack
 
 new_y:
     fld qword [rbp-96]        ; ST(0) = r  radius
@@ -151,12 +163,18 @@ new_y:
 
     fstp qword [rbp-120]        ; store new_y
 
+    finit                    ; clear the FPU stack
+
 conver_to_int:
     fld qword [rbp-112]  ; new_x
     fistp qword [rbp-112]  ; new_x
 
+    finit                    ; clear the FPU stack
+
     fld qword [rbp-120]  ; new_y
     fistp qword [rbp-120]  ; new_y
+
+    finit                    ; clear the FPU stack
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 get_coordinates_compared_to_left_up_corner:
@@ -164,17 +182,17 @@ get_coordinates_compared_to_left_up_corner:
     mov r12, [rbp-120]  ; new_y
 
     add r11, [rbp-64]  ; center_x
-    jle next
+    ; jle next
 
     cmp [rbp-32], r11  ; width
-    jle next
+    ; jle next
 
 
     add r12, [rbp-72]  ; center_y
-    jle next
+    ; jle next
 
     cmp [rbp-40], r12  ; height
-    jle next
+    ; jle next
 
     mov [rbp-112], r11  ; new_x
     mov [rbp-120], r12  ; new_y
@@ -195,33 +213,79 @@ new_pixel:
 
     add r11, r12
 
-    cmp r11, [rbp-56]
-    jge next
+    cmp r11, [rbp-56]  ; total bytes
+    ; jge next
 
 copy_bytes:
-    mov r12, [rbp-24]  ; dst
-    add r12, r11  ; cel pixela
+    mov r12, [rbp-16]  ; src
+    add r12, r11  ; cel pixel
 
-    mov r15b, [rdi]
-    mov [r12], r15b
+    mov r14, [rbp-16]
 
-    mov r15b, [rdi+1]
-    mov [r12+1], r15b
+    cmp r12, r14
+    jle next
 
-    mov r15b, [rdi+2]
-    mov [r12+2], r15b
+    mov r14, [rbp-16]  ; src
+    mov r13, [rbp-56]  ; total bytes
+    add r14, r13
 
-    mov r15b, [rdi+3]
-    mov [r12+3], r15b
+    cmp r14, r12
+    jle next
+
+; change_bytes:
+
+
+
+
+
+
+    mov r11, r9  ; x
+    mov r14, r10  ; y
+
+    ; shift in width
+    mov rax, 4
+    imul r11  ; x*bpp
+    mov r11, rax
+
+    ; shift in height
+    mov rax, r8
+    imul r14  ; y*bp_row
+    mov r14, rax
+
+    add r11, r14  ; offset for destination
+    mov r13, [rbp-24]
+    add r13, r11
+
+
+
+
+
+
+    mov r14, [rbp-24]  ; dst
+
+    cmp r13, r14
+    jle next
+
+    mov r14, [rbp-24]  ; dst
+    add r14, [rbp-56]  ; total bytes
+
+    cmp r13, r14
+    jge next
+
+change_bytes:
+
+    mov dword r15d, [r12]
+    mov dword [r13], r15d
+
 next:
+
     dec rbx  ; decrement general counter
     inc r9  ; inrement row counter
 
-    add rdi, 4  ; read_next_pixel (source)
+    ; add rsi, 4  ; read_next_pixel (destination)
 
     cmp r9, [rbp-32]  ; width
-    jge row
-
+    je row
     cmp rbx, 0
     jnz lop
 

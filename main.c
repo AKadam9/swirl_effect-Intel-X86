@@ -57,8 +57,11 @@ int main(int argc, char *argv[])
     int format = al_get_bitmap_format(input);
     printf("Bitmap format: %d\n", format);
 
+    int width_out = al_get_bitmap_width(output);
+    int height_out = al_get_bitmap_height(output);
+
     // Lock bitmaps for pixel access
-    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READONLY);
+    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
     ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
 
 
@@ -73,9 +76,9 @@ int main(int argc, char *argv[])
     if (pitch < 0)
         pitch = -pitch;
 
-    printf("Pitch: %d, width: %d, height: %d\n", pitch, width, height);
+    printf("Pitch: %d, width: %d, height: %d\n", pitch, width_out, height_out);
 
-    // int x = width * 3;
+    // int x = width * 4;
     // Call assembly swirl function
     swirl_effect(
         (unsigned char*)src_lock->data,
