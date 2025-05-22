@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     }
 
     // Load image
-    ALLEGRO_BITMAP *input = al_load_bitmap("panda.png");
+    ALLEGRO_BITMAP *input = al_load_bitmap("dog.png");
     if (!input) {
         fprintf(stderr, "Failed to load image!\n");
         return -1;
@@ -48,11 +48,16 @@ int main(int argc, char *argv[])
 
     // Create output image
     // ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
-    ALLEGRO_BITMAP *output = al_clone_bitmap(input);
-    if (!output) {
-        fprintf(stderr, "Failed to create output bitmap!\n");
-        return -1;
-    }
+    // ALLEGRO_BITMAP *output = al_clone_bitmap(input);
+    // if (!output) {
+    //     fprintf(stderr, "Failed to create output bitmap!\n");
+    //     return -1;
+    // }
+
+    // Replace al_clone_bitmap with explicit creation
+    ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
+    al_set_target_bitmap(output);
+    al_clear_to_color(al_map_rgba(0, 0, 0, 0));  // Initialize with transparent background
 
     int format = al_get_bitmap_format(input);
     printf("Bitmap format: %d\n", format);

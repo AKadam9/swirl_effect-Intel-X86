@@ -182,17 +182,17 @@ get_coordinates_compared_to_left_up_corner:
     mov r12, [rbp-120]  ; new_y
 
     add r11, [rbp-64]  ; center_x
-    ; jle next
+    jle next
 
     cmp [rbp-32], r11  ; width
-    ; jle next
+    jle next
 
 
     add r12, [rbp-72]  ; center_y
-    ; jle next
+    jle next
 
     cmp [rbp-40], r12  ; height
-    ; jle next
+    jle next
 
     mov [rbp-112], r11  ; new_x
     mov [rbp-120], r12  ; new_y
@@ -214,7 +214,7 @@ new_pixel:
     add r11, r12
 
     cmp r11, [rbp-56]  ; total bytes
-    ; jge next
+    jge next
 
 copy_bytes:
     mov r12, [rbp-16]  ; src
@@ -253,7 +253,7 @@ copy_bytes:
     mov r14, rax
 
     add r11, r14  ; offset for destination
-    mov r13, [rbp-24]
+    mov r13, [rbp-24]  ; dst
     add r13, r11
 
 

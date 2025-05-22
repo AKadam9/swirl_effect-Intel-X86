@@ -5,7 +5,7 @@
 extern void swirl_effect(uint8_t *src, uint8_t *dst, int width, int height, int pitch);
 
 int main() {
-    int width = 100, height = 100, pitch = width * 4;
+    int width = 2000, height = 1000, pitch = width * 4;
     // Allocate exactly the buffer your ASM expects
     uint8_t *src = malloc(pitch * height);
     uint8_t *dst = malloc(pitch * height);
