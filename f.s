@@ -56,12 +56,6 @@ begin:
     mov qword [rbp-32], r10  ; save width
     mov qword [rbp-40], r11  ; save height
 
-get_padding:
-    lea r10, [r10 + r10 * 2]  ; width*3
-    sub r10, r8  ; width-total_pixels
-    neg r10
-    mov [rbp-48], r10  ; padding
-
     mov r10, 0  ; height counter
     mov r9, 0  ; row counter
 
@@ -92,9 +86,8 @@ calculate_center:
     jmp lop
 
 row:
-    mov r9, 0  ; row counter
+    mov r9, 0  ; reset row counter
     inc r10  ; increment height counter
-    add rdi, [rbp-48]  ; padding
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 lop:
@@ -172,11 +165,14 @@ get_coordinates_compared_to_left_up_corner:
 
     add r11, [rbp-64]  ; center_x
     jle next
+
     cmp [rbp-32], r11  ; width
     jle next
 
+
     add r12, [rbp-72]  ; center_y
     jle next
+
     cmp [rbp-40], r12  ; height
     jle next
 
@@ -184,8 +180,11 @@ get_coordinates_compared_to_left_up_corner:
     mov [rbp-120], r12  ; new_y
 
 new_pixel:
+    mov r11, [rbp-112]  ; new_x
+    mov r12, [rbp-120]  ; new_y
+
     ; shift in width
-    mov rax, 3
+    mov rax, 4
     imul r11  ; x*bpp
     mov r11, rax
 
@@ -195,6 +194,9 @@ new_pixel:
     mov r12, rax
 
     add r11, r12
+
+    cmp r11, [rbp-56]
+    jge next
 
 copy_bytes:
     mov r12, [rbp-24]  ; dst
@@ -209,11 +211,13 @@ copy_bytes:
     mov r15b, [rdi+2]
     mov [r12+2], r15b
 
+    mov r15b, [rdi+3]
+    mov [r12+3], r15b
 next:
     dec rbx  ; decrement general counter
     inc r9  ; inrement row counter
 
-    add rdi, 3  ; read_next_pixel (source)
+    add rdi, 4  ; read_next_pixel (source)
 
     cmp r9, [rbp-32]  ; width
     jge row

@@ -58,8 +58,8 @@ int main(int argc, char *argv[])
     printf("Bitmap format: %d\n", format);
 
     // Lock bitmaps for pixel access
-    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READONLY);
-    ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READWRITE);
+    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READONLY);
+    ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
 
 
     if (!src_lock || !dst_lock) {
