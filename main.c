@@ -54,29 +54,32 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // // Lock bitmaps for pixel access
-    // ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READONLY);
-    // ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READWRITE);
+    int format = al_get_bitmap_format(input);
+    printf("Bitmap format: %d\n", format);
+
+    // Lock bitmaps for pixel access
+    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READONLY);
+    ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_RGB_888, ALLEGRO_LOCK_READWRITE);
 
 
-    // if (!src_lock || !dst_lock) {
-    //     fprintf(stderr, "Failed to lock bitmaps!\n");
-    //     return -1;
-    // }
+    if (!src_lock || !dst_lock) {
+        fprintf(stderr, "Failed to lock bitmaps!\n");
+        return -1;
+    }
 
-    // printf("Pitch: %d, width: %d, height: %d\n", src_lock->pitch, width, height);
+    printf("Pitch: %d, width: %d, height: %d\n", src_lock->pitch, width, height);
 
-    // int pitch = src_lock->pitch;
-    // if (pitch < 0)
-    //     pitch = -pitch;
+    int pitch = src_lock->pitch;
+    if (pitch < 0)
+        pitch = -pitch;
 
-    // printf("Pitch: %d, width: %d, height: %d\n", pitch, width, height);
+    printf("Pitch: %d, width: %d, height: %d\n", pitch, width, height);
 
-    int pitch = width * 3;
+    // int x = width * 3;
     // Call assembly swirl function
     swirl_effect(
-        (unsigned char*)input,
-        (unsigned char*)output,
+        (unsigned char*)src_lock->data,
+        (unsigned char*)dst_lock->data,
         width, height,
         pitch // bytes per row
     );
