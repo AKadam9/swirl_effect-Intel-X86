@@ -1,3 +1,9 @@
+section .note.GNU-stack
+    dd 0
+
+section .rodata
+K: dq 0.005  ; IEEE-754 double representation of 2.0
+
 section .text
 global swirl_effect
 
@@ -50,7 +56,8 @@ swirl_effect:
     ; r8 = bytes per row
 
 begin:
-    mov qword [rbp-8], 1  ; load k
+    mov rax, [rel K]
+    movsd qword [rbp-8], xmm0  ; load k
     mov qword [rbp-16], rdi  ; save src
     mov qword [rbp-24], rsi  ; save dst
     mov qword [rbp-32], r10  ; save width
@@ -121,6 +128,7 @@ get_radius:
     finit                   ; clear the FPU stack
 
 get_angle:
+
     fild qword [rbp-88]     ; ST(0) = y  y_offset
     fild qword [rbp-80]     ; ST(0) = x, ST(1) = y  x_offset
     fpatan                  ; ST(0) = atan2(y, x)
@@ -131,17 +139,20 @@ get_angle:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 new_coordinates:
-new_angle:
-    mov r11, [rbp-104]  ; angle
+    mov r11, [rbp-104]  ; angle:
 
     fld qword [rbp-96]        ; ST(0) = r  radius
+    mov r12, [rbp-96]  ; angle
     fld qword [rbp-8]       ; ST(0) = k, ST(1) = r  const_K
+    mov r13, [rbp-8]  ; angle
     fmul                      ; ST(0) = k * r
 
     fld qword [rbp-104]         ; ST(0) = θ, ST(1) = k*r  angle
+    mov r14, [rbp-104]  ; angle
     fadd                      ; ST(0) = θ + k*r
 
     fstp qword [rbp-104]  ; angle
+    mov r11, [rbp-104]  ; angle:
 
     finit                    ; clear the FPU stack
 
@@ -272,7 +283,9 @@ copy_bytes:
 change_bytes:
 
     mov dword r15d, [r12]
+    mov dword r14d, [r13]
     mov dword [r13], r15d
+    mov dword r14d, [r13]
 
 next:
 

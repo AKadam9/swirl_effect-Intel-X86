@@ -17,32 +17,38 @@
 
 
 
-
+# Compiler and Assembler
 CC = gcc
 ASM = nasm
 
+# Compiler and assembler flags
 CFLAGS = -Wall -g -c
-LDFLAGS = -z noexecstack \
-  -lallegro \
-  -lallegro_main \
-  -lallegro_image \
-  -lallegro_font \
-  -lallegro_ttf \
-  -lallegro_primitives
+ASMFLAGS = -f elf64 -g -F dwarf      # Add debug info for gdb debugging
 
+# Linker flags for OpenGL, GLUT, and math
+LDFLAGS = -lGL -lGLU -lglut -lm
+
+# Target binary
 TARGET = fun
+
+# Object files
 OBJS = main.o f.o
 
+# Default target
 all: $(TARGET)
 
+# Link the final executable
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) -o $(TARGET)
 
+# Compile main.c
 main.o: main.c
-	$(CC) $(CFLAGS) main.c -o main.o
+	$(CC) $(CFLAGS) -o main.o main.c
 
+# Assemble f.s (assembly file)
 f.o: f.s
-	$(ASM) -f elf64 f.s -o f.o
+	$(ASM) $(ASMFLAGS) -o f.o f.s
 
+# Clean build artifacts
 clean:
 	rm -f *.o $(TARGET)

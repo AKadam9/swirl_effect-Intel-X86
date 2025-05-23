@@ -1,124 +1,97 @@
-#include <stdio.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
+#include <GL/glut.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <allegro5/allegro.h>
-#include <allegro5/allegro_image.h>
+void flip_vertical(unsigned char *data, int width, int height, int pitch) {
+    unsigned char *row_buffer = malloc(pitch);
+    if (!row_buffer) return;
 
-#include "f.h"
+    for (int i = 0; i < height / 2; i++) {
+        unsigned char *top = data + i * pitch;
+        unsigned char *bottom = data + (height - 1 - i) * pitch;
 
+        memcpy(row_buffer, top, pitch);
+        memcpy(top, bottom, pitch);
+        memcpy(bottom, row_buffer, pitch);
+    }
+    free(row_buffer);
+}
 
-int main(int argc, char *argv[])
-{
-    if (argc < 2)
-    {
-        printf("Argument missing \n.");
-        return -1;
+void swirl_effect(unsigned char *src_data, unsigned char *dst_data, int width, int height, int pitch, double const_k);
+
+// Globals
+unsigned char *originalBitmap = NULL;
+unsigned char *swirledBitmap = NULL;
+int width, height, channels;
+double current_k = 0.0;
+
+void display() {
+    // Apply swirl with current K
+    swirl_effect(originalBitmap, swirledBitmap, width, height, width * 4, current_k);
+
+    flip_vertical(swirledBitmap, width, height, width * 4);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glRasterPos2i(-1, -1);
+    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, swirledBitmap);
+    glutSwapBuffers();
+}
+
+void prompt_for_k(int value) {
+    printf("Enter swirl constant K (float, Ctrl+C to quit): ");
+    fflush(stdout);
+
+    if (scanf("%lf", &current_k) == 1) {
+        printf("Applying swirl with K = %f\n", current_k);
+        glutPostRedisplay(); // trigger a redraw
+    } else {
+        printf("Invalid input or EOF. Exiting...\n");
+        exit(0);
     }
 
+    glutTimerFunc(100, prompt_for_k, 0); // repeat
+}
 
-     // Initialize Allegro
-    if (!al_init()) {
-        fprintf(stderr, "Failed to initialize Allegro!\n");
-        return -1;
+void cleanup() {
+    if (originalBitmap) stbi_image_free(originalBitmap);
+    if (swirledBitmap) free(swirledBitmap);
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage: %s <image.png>\n", argv[0]);
+        return 1;
     }
 
-    if (!al_init_image_addon()) {
-        fprintf(stderr, "Failed to initialize image addon!\n");
-        return -1;
+    originalBitmap = stbi_load(argv[1], &width, &height, &channels, 4);
+    if (!originalBitmap) {
+        fprintf(stderr, "Failed to load image.\n");
+        return 1;
     }
 
-    // Load image
-    ALLEGRO_BITMAP *input = al_load_bitmap("panda.png");
-    if (!input) {
-        fprintf(stderr, "Failed to load image!\n");
-        return -1;
+    swirledBitmap = malloc(height * width * 4);
+    if (!swirledBitmap) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        stbi_image_free(originalBitmap);
+        return 1;
     }
 
-    int width = al_get_bitmap_width(input);
-    int height = al_get_bitmap_height(input);
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
+    glutInitWindowSize(width, height);
+    glutCreateWindow("Swirl Effect");
 
+    glutDisplayFunc(display);
+    atexit(cleanup);
 
-    ALLEGRO_DISPLAY *display = al_create_display(width, height);
-    if (!display) {
-        fprintf(stderr, "Failed to create display!\n");
-        return -1;
-    }
+    // Prompt for K repeatedly every 100ms
+    glutTimerFunc(100, prompt_for_k, 0);
 
-    // Create output image
-    ALLEGRO_BITMAP *output = al_clone_bitmap(input);
-    if (!output) {
-        fprintf(stderr, "Failed to create output bitmap!\n");
-        return -1;
-    }
-
-    // Replace al_clone_bitmap with explicit creation
-    // ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
-    // al_set_target_bitmap(output);
-    // al_clear_to_color(al_map_rgba(0, 0, 0, 0));  // Initialize with transparent background
-
-    int format = al_get_bitmap_format(input);
-    printf("Bitmap format: %d\n", format);
-
-    int width_out = al_get_bitmap_width(output);
-    int height_out = al_get_bitmap_height(output);
-
-    // Lock bitmaps for pixel access
-    ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
-    ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
-    printf("SRC:\n");
-    printf("  data pointer   = %p\n", src_lock->data);
-    printf("  format         = %d\n", src_lock->format);
-    printf("  pitch (bytes)  = %d\n", src_lock->pitch);
-    printf("  pixel size     = %d\n", src_lock->pixel_size);
-
-    printf("DST:\n");
-    printf("  data pointer   = %p\n", dst_lock->data);
-    printf("  format         = %d\n", dst_lock->format);
-    printf("  pitch (bytes)  = %d\n", dst_lock->pitch);
-    printf("  pixel size     = %d\n", dst_lock->pixel_size);
-
-
-
-    if (!src_lock || !dst_lock) {
-        fprintf(stderr, "Failed to lock bitmaps!\n");
-        return -1;
-    }
-
-    printf("Pitch: %d, width: %d, height: %d\n", src_lock->pitch, width, height);
-
-    int pitch = src_lock->pitch;
-    if (pitch < 0)
-        pitch = -pitch;
-
-    printf("Pitch: %d, width: %d, height: %d\n", pitch, width_out, height_out);
-
-    // int x = width * 4;
-    // Call assembly swirl function
-    swirl_effect(
-        (unsigned char*)src_lock->data,
-        (unsigned char*)dst_lock->data,
-        width_out, height_out,
-        pitch // bytes per row
-    );
-
-    // Unlock bitmaps
-    al_unlock_bitmap(input);
-    al_unlock_bitmap(output);
-
-    // Draw result
-    al_clear_to_color(al_map_rgb(0, 0, 0));
-    al_draw_bitmap(output, 0, 0, 0);
-    al_flip_display();
-
-    // Wait for key press
-    al_rest(5.0);
-
-    // Cleanup
-    al_destroy_bitmap(input);
-    al_destroy_bitmap(output);
-    al_destroy_display(display);
+    glutMainLoop();
 
     return 0;
 }
