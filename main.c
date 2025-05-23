@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     }
 
     // Load image
-    ALLEGRO_BITMAP *input = al_load_bitmap("dog.png");
+    ALLEGRO_BITMAP *input = al_load_bitmap("panda.png");
     if (!input) {
         fprintf(stderr, "Failed to load image!\n");
         return -1;
@@ -47,17 +47,16 @@ int main(int argc, char *argv[])
     }
 
     // Create output image
-    // ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
-    // ALLEGRO_BITMAP *output = al_clone_bitmap(input);
-    // if (!output) {
-    //     fprintf(stderr, "Failed to create output bitmap!\n");
-    //     return -1;
-    // }
+    ALLEGRO_BITMAP *output = al_clone_bitmap(input);
+    if (!output) {
+        fprintf(stderr, "Failed to create output bitmap!\n");
+        return -1;
+    }
 
     // Replace al_clone_bitmap with explicit creation
-    ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
-    al_set_target_bitmap(output);
-    al_clear_to_color(al_map_rgba(0, 0, 0, 0));  // Initialize with transparent background
+    // ALLEGRO_BITMAP *output = al_create_bitmap(width, height);
+    // al_set_target_bitmap(output);
+    // al_clear_to_color(al_map_rgba(0, 0, 0, 0));  // Initialize with transparent background
 
     int format = al_get_bitmap_format(input);
     printf("Bitmap format: %d\n", format);
@@ -68,6 +67,18 @@ int main(int argc, char *argv[])
     // Lock bitmaps for pixel access
     ALLEGRO_LOCKED_REGION *src_lock = al_lock_bitmap(input, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
     ALLEGRO_LOCKED_REGION *dst_lock = al_lock_bitmap(output, ALLEGRO_PIXEL_FORMAT_ARGB_8888, ALLEGRO_LOCK_READWRITE);
+    printf("SRC:\n");
+    printf("  data pointer   = %p\n", src_lock->data);
+    printf("  format         = %d\n", src_lock->format);
+    printf("  pitch (bytes)  = %d\n", src_lock->pitch);
+    printf("  pixel size     = %d\n", src_lock->pixel_size);
+
+    printf("DST:\n");
+    printf("  data pointer   = %p\n", dst_lock->data);
+    printf("  format         = %d\n", dst_lock->format);
+    printf("  pitch (bytes)  = %d\n", dst_lock->pitch);
+    printf("  pixel size     = %d\n", dst_lock->pixel_size);
+
 
 
     if (!src_lock || !dst_lock) {
@@ -88,7 +99,7 @@ int main(int argc, char *argv[])
     swirl_effect(
         (unsigned char*)src_lock->data,
         (unsigned char*)dst_lock->data,
-        width, height,
+        width_out, height_out,
         pitch // bytes per row
     );
 
@@ -97,7 +108,7 @@ int main(int argc, char *argv[])
     al_unlock_bitmap(output);
 
     // Draw result
-    // al_clear_to_color(al_map_rgb(0, 0, 0));
+    al_clear_to_color(al_map_rgb(0, 0, 0));
     al_draw_bitmap(output, 0, 0, 0);
     al_flip_display();
 

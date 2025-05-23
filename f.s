@@ -258,9 +258,6 @@ copy_bytes:
 
 
 
-
-
-
     mov r14, [rbp-24]  ; dst
 
     cmp r13, r14
@@ -286,6 +283,7 @@ next:
 
     cmp r9, [rbp-32]  ; width
     je row
+
     cmp rbx, 0
     jnz lop
 
