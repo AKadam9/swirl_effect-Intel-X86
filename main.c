@@ -84,6 +84,8 @@ int main(int argc, char **argv) {
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(width, height);
     glutCreateWindow("Swirl Effect");
+    glutFullScreen();
+
 
     glutDisplayFunc(display);
     atexit(cleanup);
