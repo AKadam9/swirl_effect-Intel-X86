@@ -1,17 +1,16 @@
 section .note.GNU-stack
     dd 0
 
-section .rodata
-K: dq 0.005  ; IEEE-754 double representation of 2.0
+
 
 section .text
 global swirl_effect
 
 swirl_effect:
-    push rbp  ; stos chyba pełny na pewno schodzący
+    push rbp
     mov rbp, rsp
 
-    sub rsp, 160
+    sub rsp, 120
     ; K [rbp-8]
 
     ; src [rbp-16]
@@ -56,7 +55,6 @@ swirl_effect:
     ; r8 = bytes per row
 
 begin:
-    mov rax, [rel K]
     movsd qword [rbp-8], xmm0  ; load k
     mov qword [rbp-16], rdi  ; save src
     mov qword [rbp-24], rsi  ; save dst
@@ -79,8 +77,7 @@ get_pixel_number:
     mov rax, r14
     mul r15
     mov rbx, rax  ; general counter
-
-    sub rbx, 1  ; inaczej nie działa
+    sub rbx, 1
 
 calculate_center:
     mov r14, [rbp-32]  ; width
@@ -112,7 +109,7 @@ x_coordinates:
     sub qword [rbp-88], r15  ; height_counter-center_y  y_offset
 
 get_radius:
-    fild qword [rbp-80]     ; ST(0) = x (int -> float)  x_offset
+    fild qword [rbp-80]     ; ST(0) = x    x_offset
     fild qword [rbp-80]     ; ST(0) = x, ST(1) = x  x_offset
     fmul                    ; ST(0) = x²
 
@@ -121,7 +118,7 @@ get_radius:
     fmul                    ; ST(0) = y², ST(1) = x²
 
     fadd                    ; ST(0) = x² + y²
-    fsqrt                   ; ST(0) = √(x² + y²) = r
+    fsqrt                   ; ST(0) = sqrroot(x² + y²) = r
 
     fstp qword [rbp-96]  ; radius
 
@@ -193,17 +190,20 @@ get_coordinates_compared_to_left_up_corner:
     mov r12, [rbp-120]  ; new_y
 
     add r11, [rbp-64]  ; center_x
-    jle next
-
-    cmp [rbp-32], r11  ; width
-    jle next
-
-
     add r12, [rbp-72]  ; center_y
-    jle next
 
+check_if_in_range:
+    ; if negative
+    cmp r11, 0
+    jl next
+    cmp r12, 0
+    jl next
+
+    ; if to big
+    cmp [rbp-32], r11
+    jl next
     cmp [rbp-40], r12  ; height
-    jle next
+    jl next
 
     mov [rbp-112], r11  ; new_x
     mov [rbp-120], r12  ; new_y
@@ -224,80 +224,24 @@ new_pixel:
 
     add r11, r12
 
-    cmp r11, [rbp-56]  ; total bytes
-    jge next
-
-copy_bytes:
-    mov r12, [rbp-16]  ; src
-    add r12, r11  ; cel pixel
-
-    mov r14, [rbp-16]
-
-    cmp r12, r14
-    jle next
-
-    mov r14, [rbp-16]  ; src
-    mov r13, [rbp-56]  ; total bytes
-    add r14, r13
-
-    cmp r14, r12
-    jle next
-
-; change_bytes:
-
-
-
-
-
-
-    mov r11, r9  ; x
-    mov r14, r10  ; y
-
-    ; shift in width
-    mov rax, 4
-    imul r11  ; x*bpp
-    mov r11, rax
-
-    ; shift in height
-    mov rax, r8
-    imul r14  ; y*bp_row
-    mov r14, rax
-
-    add r11, r14  ; offset for destination
-    mov r13, [rbp-24]  ; dst
-    add r13, r11
-
-
-
-    mov r14, [rbp-24]  ; dst
-
-    cmp r13, r14
-    jle next
-
-    mov r14, [rbp-24]  ; dst
-    add r14, [rbp-56]  ; total bytes
-
-    cmp r13, r14
-    jge next
-
 change_bytes:
+    mov r12, [rbp-16]  ; src
+    add r12, r11  ; cel pixel  (src+offset)
 
-    mov dword r15d, [r12]
-    mov dword r14d, [r13]
-    mov dword [r13], r15d
-    mov dword r14d, [r13]
+    mov dword r15d, [r12]  ; from src
+    mov dword [rsi], r15d  ; to dst
 
 next:
 
     dec rbx  ; decrement general counter
     inc r9  ; inrement row counter
 
-    ; add rsi, 4  ; read_next_pixel (destination)
+    add rsi, 4  ; next pixel in dst
 
     cmp r9, [rbp-32]  ; width
     je row
 
-    cmp rbx, 0
+    test rbx, rbx
     jnz lop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
