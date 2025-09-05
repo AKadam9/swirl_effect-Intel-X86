@@ -1,6 +1,12 @@
-./f.0
-./main.o
-./fun
-./panda.bmp
+# Build artifacts
+f.0
+main.o
+fun
+
+# Images (if you don't want them in Git)
+panda.bmp
 sowa.png
-*:Zone.Identifier
+gory.jpg
+
+# Windows alternate data streams (Zone.Identifier metadata)
+*.Zone.Identifier
