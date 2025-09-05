@@ -1,8 +1,6 @@
 section .note.GNU-stack
     dd 0
 
-
-
 section .text
 global swirl_effect
 
@@ -90,16 +88,17 @@ calculate_center:
 
     jmp lop
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 row:
     mov r9, 0  ; reset row counter
     inc r10  ; increment height counter
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 lop:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to_polar:
-    mov r14, [rbp-64]
-    mov r15, [rbp-72]
+    mov r14, [rbp-64]  ; center_x
+    mov r15, [rbp-72]  ; center_y
 
 x_coordinates:
     mov qword [rbp-80], r9  ; x_offset
@@ -136,48 +135,47 @@ get_angle:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 new_coordinates:
+new_angle:
     mov r11, [rbp-104]  ; angle:
 
     fld qword [rbp-96]        ; ST(0) = r  radius
     mov r12, [rbp-96]  ; angle
-    fld qword [rbp-8]       ; ST(0) = k, ST(1) = r  const_K
+    fld qword [rbp-8]         ; ST(0) = k, ST(1) = r  const_K
     mov r13, [rbp-8]  ; angle
     fmul                      ; ST(0) = k * r
 
-    fld qword [rbp-104]         ; ST(0) = θ, ST(1) = k*r  angle
+    fld qword [rbp-104]       ; ST(0) = θ, ST(1) = k*r  angle
     mov r14, [rbp-104]  ; angle
     fadd                      ; ST(0) = θ + k*r
 
     fstp qword [rbp-104]  ; angle
     mov r11, [rbp-104]  ; angle:
 
-    finit                    ; clear the FPU stack
+    finit                     ; clear the FPU stack
 
 new_x:
     fld qword [rbp-96]        ; ST(0) = r  radius
-    fld qword [rbp-104]     ; ST(0) = θ', ST(1) = r  angle
+    fld qword [rbp-104]       ; ST(0) = θ', ST(1) = r  angle
     fcos                      ; ST(0) = cos(θ')
     fmul                      ; ST(0) = x = r * cos(θ')
 
-    fstp qword [rbp-112]        ; store new_x
+    fstp qword [rbp-112]      ; store new_x
 
-    finit                    ; clear the FPU stack
+    finit                     ; clear the FPU stack
 
 new_y:
     fld qword [rbp-96]        ; ST(0) = r  radius
-    fld qword [rbp-104]     ; ST(0) = θ', ST(1) = r  angle
+    fld qword [rbp-104]       ; ST(0) = θ', ST(1) = r  angle
     fsin                      ; ST(0) = sin(θ')
     fmul                      ; ST(0) = y = r * sin(θ')
 
-    fstp qword [rbp-120]        ; store new_y
+    fstp qword [rbp-120]      ; store new_y
 
-    finit                    ; clear the FPU stack
+    finit                     ; clear the FPU stack
 
 conver_to_int:
     fld qword [rbp-112]  ; new_x
     fistp qword [rbp-112]  ; new_x
-
-    finit                    ; clear the FPU stack
 
     fld qword [rbp-120]  ; new_y
     fistp qword [rbp-120]  ; new_y
@@ -205,13 +203,11 @@ check_if_in_range:
     cmp [rbp-40], r12  ; height
     jl next
 
+    ; save
     mov [rbp-112], r11  ; new_x
     mov [rbp-120], r12  ; new_y
 
 new_pixel:
-    mov r11, [rbp-112]  ; new_x
-    mov r12, [rbp-120]  ; new_y
-
     ; shift in width
     mov rax, 4
     imul r11  ; x*bpp
@@ -232,7 +228,6 @@ change_bytes:
     mov dword [rsi], r15d  ; to dst
 
 next:
-
     dec rbx  ; decrement general counter
     inc r9  ; inrement row counter
 
